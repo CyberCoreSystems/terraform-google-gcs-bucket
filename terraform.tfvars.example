@@ -1,0 +1,142 @@
+# ==============================================================================
+#  gcp-gcs-bucket — terraform.tfvars
+# ==============================================================================
+#  Copy this file to `terraform.tfvars`, set the values, then run:
+#      tofu init && tofu apply        (or:  terraform init && terraform apply)
+#
+# AUTHENTICATION — Google Cloud:
+#   The google provider authenticates via Google's Application Default
+#   Credentials (ADC) chain unless you override it.
+#   Quick start: gcloud auth application-default login (for Terraform/ADC).
+#   Also `gcloud auth login` for the CLI itself and `gcloud config set project
+#   <id>` to set the default project.
+#   Environment variables Terraform reads:
+#     GOOGLE_CREDENTIALS  (secret) — Service-account key as a file path OR raw JSON string (provider-specific, checked first).
+#     GOOGLE_APPLICATION_CREDENTIALS  (secret) — Standard ADC path to a key/external-account JSON file (used by WIF and the SDK).
+#     GOOGLE_PROJECT — Default project id for resources; alt: GOOGLE_CLOUD_PROJECT, GCLOUD_PROJECT, CLOUDSDK_CORE_PROJECT.
+#     GOOGLE_REGION — Default region; alt: GCLOUD_REGION, CLOUDSDK_COMPUTE_REGION.
+#     GOOGLE_ZONE — Default zone; alt: GCLOUD_ZONE, CLOUDSDK_COMPUTE_ZONE.
+#   Full guide (auth + remote state):  docs/CONNECTING-PROVIDERS.md#gcp
+#
+#  Secrets below read "REPLACE_ME" — never commit real secrets. Prefer
+#  TF_VAR_<name> environment variables or a secrets manager.
+#  Status: static-validated, live-test pending (see README.md).
+# ==============================================================================
+
+
+# ------------------------------------------------------------------------------
+#  REQUIRED — you must set these
+# ------------------------------------------------------------------------------
+
+# bucket_name  —  string  (REQUIRED)
+#   Globally-unique bucket name (3-63 chars; lowercase letters, digits, hyphens,
+#   underscores, dots; must not start with "goog").
+#   Constraint: bucket_name must be 3-63 chars of lowercase letters, digits,
+#   '-', '_', '.', starting and ending alphanumeric.
+bucket_name = "iacbazaar-example-bucket-12345"
+
+# project_id  —  string  (REQUIRED)
+#   GCP project ID that owns the bucket.
+#   Constraint: project_id must be a valid GCP project ID (6-30 chars, lowercase
+#   letters, digits, hyphens).
+project_id  = "example-project-123456"
+
+# ------------------------------------------------------------------------------
+#  OPTIONAL — defaults shown; uncomment a line to override
+# ------------------------------------------------------------------------------
+
+# location  —  string  (optional, default: "US")
+#   Bucket location: region (e.g. us-central1), dual-region (e.g. nam4) or
+#   multi-region (US, EU, ASIA).
+location    = "us-central1"
+
+# storage_class  —  string  (optional, default: "STANDARD")
+#   Default storage class for objects.
+#   Constraint: storage_class must be one of STANDARD, NEARLINE, COLDLINE,
+#   ARCHIVE.
+# storage_class = "STANDARD"
+
+# versioning_enabled  —  bool  (optional, default: true)
+#   Enable object versioning (pairs with the default noncurrent-version
+#   lifecycle rule).
+# versioning_enabled = true
+
+# force_destroy  —  bool  (optional, default: false)
+#   Allow Terraform to destroy a non-empty bucket.
+# force_destroy = false
+
+# requester_pays  —  bool  (optional, default: false)
+#   Enable Requester Pays (callers are billed for access).
+# requester_pays = false
+
+# kms_key_name  —  string  (optional, default: null)
+#   Full Cloud KMS key resource ID for CMEK (projects/.../cryptoKeys/...). If
+#   null, Google-managed encryption is used.
+# kms_key_name = null
+
+# autoclass_enabled  —  bool  (optional, default: false)
+#   Enable Autoclass (automatic storage-class transitions). Requires
+#   storage_class = STANDARD.
+# autoclass_enabled = false
+
+# autoclass_terminal_storage_class  —  string  (optional, default: "NEARLINE")
+#   Coldest class Autoclass may transition to: NEARLINE or ARCHIVE.
+#   Constraint: autoclass_terminal_storage_class must be NEARLINE or ARCHIVE.
+# autoclass_terminal_storage_class = "NEARLINE"
+
+# lifecycle_rules  —  list  (optional, default: see variables.tf)
+#   Lifecycle rules. The default keeps the 10 newest noncurrent versions and
+#   aborts incomplete multipart uploads after 7 days. Set [] to disable.
+#   Constraint: Lifecycle action type must be Delete, SetStorageClass or
+#   AbortIncompleteMultipartUpload.
+# lifecycle_rules = [
+#     {
+#       action    = { type = "Delete" }
+#       condition = { num_newer_versions = 10, with_state = "ARCHIVED" }
+#     },
+#     {
+#       action    = { type = "AbortIncompleteMultipartUpload" }
+#       condition = { age = 7 }
+#     },
+#   ]
+
+# soft_delete_retention_seconds  —  number  (optional, default: 604800)
+#   Soft-delete retention in seconds: 0 disables, otherwise 604800 (7d) to
+#   7776000 (90d). Default is GCP's 7 days.
+#   Constraint: soft_delete_retention_seconds must be 0, or between 604800 (7
+#   days) and 7776000 (90 days).
+# soft_delete_retention_seconds = 604800
+
+# retention_policy  —  object  (optional, default: null)
+#   WORM retention: objects cannot be deleted/overwritten for
+#   retention_period_seconds. is_locked = true is IRREVERSIBLE.
+#   Constraint: retention_period_seconds must be between 1 and 3155760000 (100
+#   years).
+# retention_policy = null
+
+# access_log_bucket  —  string  (optional, default: null)
+#   Bucket name to receive access/storage logs. Null disables access logging.
+# access_log_bucket = null
+
+# access_log_prefix  —  string  (optional, default: null)
+#   Object prefix for access logs.
+# access_log_prefix = null
+
+# iam_members  —  map  (optional, default: {})
+#   Bucket IAM bindings keyed by a stable label: { role, member }. Public
+#   members are rejected — this bucket stays private.
+#   Constraint: Public members (allUsers, allAuthenticatedUsers) are not
+#   allowed; public_access_prevention is enforced on this bucket.
+iam_members = {
+  app_reader = {
+    role   = "roles/storage.objectViewer"
+    member = "serviceAccount:app@example-project-123456.iam.gserviceaccount.com"
+  }
+}
+
+# labels  —  map  (optional, default: {})
+#   Labels applied to the bucket.
+labels = {
+  environment = "example"
+  managed_by  = "iac-bazaar"
+}
