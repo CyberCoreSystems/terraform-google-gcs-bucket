@@ -8,7 +8,7 @@ This module was **applied to a real Google Cloud account, verified, and destroye
 
 ```hcl
 module "gcs_bucket" {
-  source  = "CyberCoreSystems/gcs-bucket/google"
+  source  = "registry.terraform.io/CyberCoreSystems/gcs-bucket/google"
   version = "~> 1.0"
 
   # See variables.tf for the full input contract.
